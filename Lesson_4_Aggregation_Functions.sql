@@ -82,3 +82,94 @@ WHERE w.DepositGroup IN ('Troll Chest')
 GROUP BY SUBSTRING(w.FirstName,1,1)
 ORDER BY SUBSTRING(w.FirstName,1,1)
 GO
+--11
+SELECT w.DepositGroup,
+	   w.IsDepositExpired,
+	   AVG(w.DepositInterest) AS [AverageInterest] FROM WizzardDeposits AS w
+	WHERE w.DepositStartDate> '01/01/1985'
+	GROUP BY w.DepositGroup, W.IsDepositExpired
+	ORDER BY w.DepositGroup DESC, W.IsDepositExpired
+GO
+--12
+SELECT SUM(x.[Deposit DIfference] ) AS [SumDifference] FROM (SELECT w.FirstName AS [Host Wizard],
+	   w.DepositAmount AS [Host Wizard Deposit],
+	   LEAD(w.FirstName,1) OVER(ORDER BY Id) as [Guest Wizard],
+	   LEAD(w.DepositAmount,1) OVER (ORDER BY Id) AS [Guest Wizard Deposit],
+	   w.DepositAmount-LEAD(w.DepositAmount,1) OVER (ORDER BY ID) AS [Deposit DIfference]
+FROM WizzardDeposits	 AS w) AS x
+GO
+--13
+GO
+USE Softuni
+SELECT e.DepartmentID,
+	   SUM(e.Salary) AS [TotalSalary]
+	   
+FROM Employees AS e
+GROUP BY e.DepartmentID
+ORDER BY e.DepartmentID
+GO
+--14
+SELECT e.DepartmentID,
+	   MIN(e.Salary)AS [MinimumSalary]
+	   FROM Employees AS e
+	   where e.HireDate>'01/01/2000'
+	   GROUP BY e.DepartmentID
+	   HAVING e.DepartmentID IN (2,5,7) 
+GO
+--15
+SELECT *
+INTO NewOne
+FROM Employees AS e
+WHERE e.Salary>30000
+
+DELETE FROM NewOne 
+WHERE ManagerID=42
+
+UPDATE NewOne
+SET Salary+=5000
+WHERE DepartmentID=1
+
+SELECT n.DepartmentID,
+	   AVG(n.Salary) AS AverageSalary
+ FROM NewOne AS n
+ GROUP BY n.DepartmentID
+ GO
+ --16
+ SELECT e.DepartmentID,
+	   MAX(e.Salary) AS [MaxSalary] FROM Employees AS e
+	   GROUP BY e.DepartmentID
+	   HAVING MAX(e.Salary) NOT BETWEEN 30000 AND 70000
+GO
+--17
+SELECT COUNT(t.Salary)  AS [Count] FROM 
+(SELECT e.Salary ,
+	e.ManagerID
+FROM Employees AS e
+WHERE e.managerId IS NULL
+) as t
+GO
+--18
+SELECT t.DepartmentID,
+	MAX(t.Salary) AS [ThirdHighestSalary]
+	 FROM  (
+	 SELECT e.DepartmentID,
+	   DENSE_RANK() OVER (PARTITION BY e.DepartmentId ORDER BY e.Salary DESC) AS [Rank],
+	   e.Salary
+	   FROM Employees AS e
+	   ) AS t
+	   WHERE t.[Rank]=3
+	   GROUP BY t.DepartmentID,t.[Rank]
+GO
+--19
+
+ SELECT TOP(10)  e.FirstName,
+	   e.LastName,
+	   e.DepartmentID
+ FROM Employees AS e
+ WHERE e.Salary>
+	   (SELECT 
+		AVG(em.Salary) 
+		FROM Employees AS em
+		WHERE em.DepartmentID= e.DepartmentID
+		)
+	ORDER BY e.DepartmentID
