@@ -157,7 +157,7 @@ SELECT t.DepartmentID,
 	   e.Salary
 	   FROM Employees AS e
 	   ) AS t
-	   WHERE t.[Rank]=3
+	   WHERE t.[Rank] IN 3
 	   GROUP BY t.DepartmentID,t.[Rank]
 GO
 --19
