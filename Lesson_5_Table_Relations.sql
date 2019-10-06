@@ -119,3 +119,60 @@ REFERENCES Items(ItemID)
 )
 
 GO
+--6
+
+CREATE TABLE Subjects(
+SubjectID INT PRIMARY KEY IDENTITY(1,1),
+[SubjectName] VARCHAR(30) NOT NULL
+)
+
+CREATE TABLE Majors(
+MajorID INT PRIMARY KEY IDENTITY(1,1),
+[Name] VARCHAR(30) NOT NULL
+)
+
+CREATE TABLE Students(
+StudentID INT PRIMARY KEY IDENTITY(1,1),
+StudentNumber INT NOT NULL,
+StudentName VARCHAR(30),
+MajorID INT FOREIGN KEY REFERENCES Majors(MajorID)
+)
+
+CREATE TABLE Payments(
+PaymentID INT PRIMARY KEY IDENTITY(1,1),
+PaymentDate DATETIME NOT NULL,
+PaymentAmount DECIMAL(15,2) NOT NULL,
+StudentID INT FOREIGN KEY REFERENCES Students(StudentID)
+)
+
+CREATE TABLE Agenda(
+StudentID INT NOT NULL,
+SubjectID INT NOT NULL,
+
+CONSTRAINT PK_Student_Subject
+PRIMARY KEY (StudentID,SubjectID),
+
+CONSTRAINT FK_Agenda_Student
+FOREIGN KEY (StudentID)
+REFERENCES Students(StudentID),
+
+CONSTRAINT FK_Agenda_Subject
+FOREIGN KEY (SubjectID)
+REFERENCES Subjects(SubjectID)
+)
+
+--7
+
+--8
+
+--9
+GO
+use [Geography]
+SELECT m.MountainRange,
+	   p.PeakName,
+	   p.Elevation
+	   FROM Peaks AS p
+JOIN Mountains AS m
+ON m.Id=p.MountainId
+WHERE m.MountainRange IN ('Rila')
+ORDER BY p.Elevation DESC
