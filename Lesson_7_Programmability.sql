@@ -132,3 +132,134 @@ AS
 	END
 GO
 --select dbo.ufn_IsWordComprised ('ppp','Giuy' )
+
+--8 Delete Employees and Departments 
+CREATE PROCEDURE usp_DeleteEmployeesFromDepartment @DepartmentId INT
+AS
+	BEGIN
+	--removing the project keys
+	DELETE FROM EmployeesProjects
+	WHERE EmployeeId IN
+		 (
+		SELECT EmployeeID FROM EmployeesProjects 
+		WHERE EmployeeID IN 
+			(
+			SELECT e.EmployeeID FROM Employees AS e
+			WHERE e.DepartmentID=@DepartmentId
+			)
+		)
+	--removing the manager dependency
+	UPDATE Employees
+	SET ManagerID = NULL
+	WHERE EmployeeID IN
+		(
+		SELECT e.EmployeeID FROM Employees AS e
+		WHERE e.DepartmentID=@DepartmentId
+		)
+	
+	--remove department null constr in dep.
+	ALTER TABLE Departments
+	ALTER COLUMN ManagerId INT
+	
+	--remove department null constr in employees
+	ALTER TABLE Employees
+	ALTER COLUMN DepartmentId INT
+
+	
+	--removing manager-dependency in department
+	UPDATE Departments
+	SET ManagerID= null
+	WHERE DepartmentID=@DepartmentId
+
+	--removing department-dependency in employees
+	UPDATE Employees
+	SET DepartmentID= NULL
+	WHERE DepartmentID=@DepartmentId
+
+	--deleting employees (finally)
+	DELETE FROM Employees
+	WHERE DepartmentID=@DepartmentId
+	--deleting departments (finally)
+	DELETE FROM Departments
+	WHERE DepartmentID=@DepartmentId
+	--returning the count as required from the exercise
+	SELECT COUNT(EmployeeID) FROM Employees
+	WHERE DepartmentID = @DepartmentId
+
+	END
+--9 Find Full Name
+GO
+USE Bank
+GO
+CREATE PROCEDURE usp_GetHoldersFullName 
+AS
+	BEGIN
+		SELECT
+		ah.FirstName+' '+ah.LastName AS [Full Name]
+		FROM AccountHolders AS ah
+		
+	END
+--10  Problem 10. People with Balance Higher Than
+GO
+
+CREATE PROCEDURE usp_GetHoldersWithBalanceHigherThan @Number DECIMAL(15,2)
+AS
+	BEGIN
+	SELECT 
+		ah.FirstName
+		,ah.LastName
+		 
+		 FROM AccountHolders AS ah
+		JOIN Accounts AS ac ON ac.AccountHolderId=ah.Id
+		GROUP BY ah.FirstName,ah.LastName
+		HAVING  SUM(ac.Balance)>=@Number
+		ORDER BY ah.FirstName,ah.LastName
+	END
+GO
+--11 Future Value Function
+CREATE FUNCTION ufn_CalculateFutureValue (@Sum DECIMAL(18,2), @Interest FLOAT, @Years INT)
+RETURNS DECIMAL(15,4)
+	BEGIN
+		DECLARE @FutureValue DECIMAL(15,4)=0;
+		SET @FutureValue=@Sum* POWER((1+@Interest),@years)
+		return @FutureValue
+	END
+	GO
+	SELECT dbo.ufn_CalculateFutureValue (123.12,0.1,5)
+GO
+--12 Calculating Interest
+
+
+CREATE PROCEDURE usp_CalculateFutureValueForAccount @AccountId INT, @Rate FLOAT
+AS
+	BEGIN
+		SELECT 
+			ah.Id AS [Account Id]
+			,ah.FirstName AS [First Name]
+			,ah.LastName AS [Last Name]
+			,a.Balance AS [Current Balance]
+			, dbo.ufn_CalculateFutureValue (a.Balance,@Rate,5) AS [Balance in 5 years]
+			FROM AccountHolders ah
+			JOIN Accounts as A ON a.AccountHolderId=ah.Id		
+			WHERE a.Id= @AccountId
+	END
+GO
+--exec dbo.usp_CalculateFutureValueForAccount @AccountId=1,@Rate=0.1
+GO
+--13 Scalar Function: Cash in User Games Odd Rows
+USE Diablo
+GO
+CREATE FUNCTION ufn_CashInUsersGames  (@GameName VARCHAR(MAX))
+RETURNS TABLE
+RETURN SELECT SUM(t.Cash) AS [SumCash] FROM 
+		(
+		SELECT ug.Cash
+			   ,DENSE_RANK() OVER (PARTITION BY g.[Name] ORDER BY ug.Cash DESC) AS [cashRank]
+			   FROM UsersGames AS ug
+			JOIN Games AS g ON g.Id=ug.GameId
+			WHERE g.[Name]=@GameName
+		) 
+	AS T
+	WHERE t.cashRank%2=1
+GO
+ SELECT * FROM dbo.ufn_CashInUsersGames ('Love in a mist')
