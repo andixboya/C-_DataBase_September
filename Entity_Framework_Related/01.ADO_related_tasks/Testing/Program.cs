@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
@@ -7,21 +8,22 @@ namespace Testing
 {
     class Program
     {
+
+
+
         static void Main()
         {
 
             //int id = int.Parse(Console.ReadLine());
+            //string[] minionParams = Console.ReadLine().Split(" ", StringSplitOptions.RemoveEmptyEntries).ToArray();
 
-
-            string[] minionParams = Console.ReadLine().Split(" ", StringSplitOptions.RemoveEmptyEntries).ToArray();
-
-            string villainName = Console.ReadLine();
+            //string villainName = Console.ReadLine();
+            //string countryName = Console.ReadLine();
 
 
             using (SqlConnection connection = new SqlConnection(Settings.CONNECTION_STRING))
             {
                 connection.Open();
-
 
                 //1. Initial Setup 
                 //CreateMinionsDataBase(connection);
@@ -35,14 +37,151 @@ namespace Testing
                 //3 Minion Names
                 //GetMinionNamesByVillain(connection, id);
 
-                //4 Add Minion:
-                AddMinion(minionParams, villainName, connection);
+                //4 Add Minion: not finished
+                //AddMinion(minionParams, villainName, connection);
+
+                //5 Change Town Names Casing
+                //ChangeTownNamesCasing(countryName, connection);
+
+                //6 Remove Villain
+                //RemoveVillain(id, connection);
+
+                //7 Get All MinionNames
+                //GetAllMinionNames(connection);
 
 
             }
         }
 
-        //4. not finished
+        //7. Print All Minion Names 
+        private static void GetAllMinionNames(SqlConnection connection)
+        {
+            List<string> names = new List<string>();
+            using (SqlCommand getAllMinionNames = new SqlCommand(Queries.GET_ALL_MINION_NAMES, connection))
+            {
+
+                var readData = getAllMinionNames.ExecuteReader();
+                while (readData.Read())
+                {
+                    names.Add((string)readData["Name"]);
+                }
+            }
+            StringBuilder sb = new StringBuilder();
+
+
+            int forward = 0;
+            int backward = names.Count - 1;
+
+            for (int i = 0; i < names.Count; i++)
+            {
+                if (i % 2 == 0)
+                {
+                    sb.AppendLine(names[forward++]);
+                }
+                else
+                {
+                    sb.AppendLine(names[backward--]);
+                }
+            }
+
+            Console.WriteLine(sb.ToString().TrimEnd());
+
+        }
+
+        //6 Remove Villain
+        private static void RemoveVillain(int id, SqlConnection connection)
+        {
+            string villainName = string.Empty;
+
+            using (SqlCommand getVillainNameById = new SqlCommand(Queries.GET_VILLAIN_BY_ID, connection))
+            {
+                getVillainNameById.Parameters.AddWithValue("@Id", id);
+
+                villainName = (string)getVillainNameById.ExecuteScalar();
+            }
+
+            if (villainName is null)
+            {
+                Console.WriteLine("No such villain was found.");
+                return;
+            }
+
+            int countOfDeletedMinions = 0;
+
+            using (SqlCommand deleteMinionsVillainsRel = new SqlCommand(Queries.DELETE_VILLAIN_FROM_MINIONS_VILLAINS, connection))
+            {
+                deleteMinionsVillainsRel.Parameters.AddWithValue(@"@villainId", id);
+
+                countOfDeletedMinions = deleteMinionsVillainsRel.ExecuteNonQuery();
+            }
+
+            using (SqlCommand deleteVIllainById = new SqlCommand(Queries.DELETE_VILLAIN_BY_ID, connection))
+            {
+                deleteVIllainById.Parameters.AddWithValue(@"@villainId", id);
+
+                deleteVIllainById.ExecuteNonQuery();
+            }
+
+            Console.WriteLine($"{villainName} was deleted.");
+            Console.WriteLine($"{countOfDeletedMinions} minions were released.");
+
+        }
+
+        //5 Change Town Names Casing
+        private static void ChangeTownNamesCasing(string countryName, SqlConnection connection)
+        {
+            int countOfAffectedTowns = -1;
+            using (SqlCommand changeTownsNames = new SqlCommand(Queries.CHANGE_TOWNS_NAMES_BY_COUNTRY_NAME, connection))
+            {
+                int countryCode = -1;
+
+                try
+                {
+                    using (SqlCommand getCountryCodeByCountryName
+                    = new SqlCommand("SELECT TOP(1) c.Id FROM Countries AS c WHERE c.Name = @countryName", connection))
+                    {
+                        getCountryCodeByCountryName.Parameters.AddWithValue(@"@countryName", countryName);
+
+                        countryCode = (int)getCountryCodeByCountryName.ExecuteScalar();
+                    }
+
+                    changeTownsNames.Parameters.AddWithValue(@"@countryCode", countryCode);
+                    countOfAffectedTowns = changeTownsNames.ExecuteNonQuery();
+
+
+                }
+
+                catch (Exception e)
+                {
+                    Console.WriteLine("No towns names were affected!");
+                    return;
+                }
+
+            }
+
+
+
+            using (SqlCommand getTownsByCountryName = new SqlCommand(Queries.GET_TOWNS_NAMES_BY_COUNTRY_NAME, connection))
+            {
+                getTownsByCountryName.Parameters.AddWithValue(@"@countryName", countryName);
+
+                using (SqlDataReader readData = getTownsByCountryName.ExecuteReader())
+                {
+                    var result = new List<string>();
+
+                    while (readData.Read())
+                    {
+                        result.Add(readData["Name"].ToString());
+                    }
+
+                    Console.WriteLine($"{countOfAffectedTowns} towns names were affected.");
+                    Console.WriteLine($"[{string.Join(", ", result)}]");
+                }
+            }
+
+        }
+
+        //4 Add Minion /not finished/
         private static void AddMinion(string[] minionParams, string villainName, SqlConnection connection)
         {
             string minionName = minionParams[0];
@@ -55,10 +194,8 @@ namespace Testing
             {
                 using (SqlCommand getMinionIdByName = new SqlCommand(Queries.GET_MINION_ID_BY_NAME, connection))
                 {
-
                     getMinionIdByName.Parameters.AddWithValue("@Name", minionName);
-
-                    minionId = (int) getMinionIdByName.ExecuteScalar() ;
+                    minionId = (int)getMinionIdByName.ExecuteScalar();
                 }
 
             }
@@ -71,8 +208,6 @@ namespace Testing
 
 
         }
-
-
 
         // 3. Minion Names 
         private static void GetMinionNamesByVillain(SqlConnection connection, int villainId)

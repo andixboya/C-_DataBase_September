@@ -38,19 +38,37 @@ namespace Testing
                                                       HAVING COUNT(mv.VillainId) > 3 
                                                     ORDER BY COUNT(mv.VillainId)";
 
-        public static string GET_VILLAIN_BY_ID= @"SELECT Name FROM Villains WHERE Id = @Id";
+        public static string GET_VILLAIN_BY_ID = @"SELECT Name FROM Villains WHERE Id = @Id";
 
         public static string GET_MINIONS_NAMES = @"SELECT ROW_NUMBER() OVER (ORDER BY m.Name) as RowNum,
-                                         m.Name, 
-                                         m.Age
-                                    FROM MinionsVillains AS mv
-                                    JOIN Minions As m ON mv.MinionId = m.Id
-                                   WHERE mv.VillainId = @Id
-                                ORDER BY m.Name";
+                                                             m.Name, 
+                                                             m.Age
+                                                        FROM MinionsVillains AS mv
+                                                        JOIN Minions As m ON mv.MinionId = m.Id
+                                                       WHERE mv.VillainId = @Id
+                                                    ORDER BY m.Name";
 
         public static string GET_VILLAIN_BY_NAME = @"SELECT Id FROM Villains WHERE Name = @Name";
         public static string GET_MINION_ID_BY_NAME = @"SELECT Id FROM Minions WHERE Name = @Name";
 
+        public static string CHANGE_TOWNS_NAMES_BY_COUNTRY_NAME = @"UPDATE Towns
+                                                                   SET Name = UPPER(Name)
+                                                                 WHERE CountryCode = @countryCode";
+
+        public static string GET_TOWNS_NAMES_BY_COUNTRY_NAME = @"SELECT t.Name
+                                                                FROM Towns as t
+                                                                JOIN Countries AS c ON c.Id = t.CountryCode
+                                                                WHERE c.Name = @countryName";
+
+
+        public static string DELETE_VILLAIN_FROM_MINIONS_VILLAINS = @"DELETE FROM MinionsVillains 
+                                                                      WHERE VillainId = @villainId";
+        public static string DELETE_VILLAIN_BY_ID = @"DELETE FROM Villains
+                                                      WHERE Id = @villainId";
+
+
+        public static string GET_ALL_MINION_NAMES = @"SELECT Name FROM Minions";
 
     }
+
 }
