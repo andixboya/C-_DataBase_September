@@ -5,6 +5,7 @@ namespace FastFood.Web.MappingConfiguration
     using AutoMapper;
     using FastFood.Models;
     using FastFood.Web.ViewModels.Employees;
+    using FastFood.Web.ViewModels.Orders.SubViews;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -24,6 +25,8 @@ namespace FastFood.Web.MappingConfiguration
             
             this.CreateMap<Employee, EmployeesAllViewModel>()
                 .ForMember(d => d.Position, y => y.MapFrom(s => s.Position.Name));
+
+            this.CreateMap<Employee, CreateOrderEmployeeView>();
 
         }
     }

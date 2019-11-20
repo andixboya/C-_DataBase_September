@@ -25,7 +25,6 @@ namespace FastFood.Models
 
 		public int EmployeeId { get; set; }
 
-		[Required]
 		public Employee Employee { get; set; }
 
 		public ICollection<OrderItem> OrderItems { get; set; }

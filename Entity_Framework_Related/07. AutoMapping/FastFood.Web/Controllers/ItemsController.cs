@@ -8,6 +8,8 @@
 
     using Data;
     using ViewModels.Items;
+    using FastFood.Models;
+    using Microsoft.EntityFrameworkCore;
 
     public class ItemsController : Controller
     {
@@ -32,12 +34,28 @@
         [HttpPost]
         public IActionResult Create(CreateItemInputModel model)
         {
-            throw new NotImplementedException();
+
+            if (!ModelState.IsValid)
+            {
+                return this.RedirectToAction("Error", "Home");
+            }
+
+            var itemToAdd = this.mapper.Map<Item>(model);
+            this.context.Add(itemToAdd);
+            this.context.SaveChanges();
+
+            return this.Redirect("/Items/All");
         }
 
         public IActionResult All()
         {
-            throw new NotImplementedException();
+            var model = this
+                .context
+                .Items
+                .ProjectTo<ItemsAllViewModels>(this.mapper.ConfigurationProvider)
+                .ToList();
+
+                return this.View(model);
         }
     }
 }
